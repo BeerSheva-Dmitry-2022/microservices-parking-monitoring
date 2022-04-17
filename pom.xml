@@ -8,9 +8,12 @@
         <version>2.6.6</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+    <modules>
+        <module>parking-monitoring-dto</module>
+    </modules>
     <groupId>telran</groupId>
     <artifactId>parking-monitoring</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>parking-monitoring</name>
     <description>parking-monitoring</description>
     <properties>
