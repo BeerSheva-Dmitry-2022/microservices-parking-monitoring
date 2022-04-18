@@ -8,49 +8,24 @@
         <artifactId>parking-monitoring</artifactId>
     </parent>
     <groupId>telran</groupId>
-    <artifactId>parking-monitoring-analyzer-data</artifactId>
+    <artifactId>parking-monitoring-config-server</artifactId>
     <version>0.0.1</version>
-    <name>parking-monitoring-analyzer-data</name>
-    <description>parking-monitoring-analyzer-data</description>
+    <name>parking-monitoring-config-server</name>
+    <description>parking-monitoring-config-server</description>
     <properties>
         <java.version>11</java.version>
         <spring-cloud.version>2021.0.1</spring-cloud.version>
     </properties>
     <dependencies>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-config</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream-binder-kafka</artifactId>
+            <artifactId>spring-cloud-config-server</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream</artifactId>
-            <scope>test</scope>
-            <classifier>test-binder</classifier>
-            <type>test-jar</type>
-        </dependency>
-
-        <dependency>
-            <groupId>telran</groupId>
-            <artifactId>parking-monitoring-dto</artifactId>
-            <version>0.0.1</version>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -64,7 +39,6 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
 
     <build>
         <plugins>
