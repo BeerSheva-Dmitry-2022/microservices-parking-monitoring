@@ -1,7 +1,6 @@
 package telran.parking.monitoring.dto;
 
 import lombok.*;
-import org.apache.logging.log4j.CloseableThreadContext;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -10,22 +9,22 @@ import java.time.ZoneId;
 @NoArgsConstructor
 @Getter
 public class Sensor {
-    long id;
-    String value;
+    int id;
+    String carNumber;
     long timestamp;
 
-    public Sensor(long id, String value) {
+    public Sensor(int id, String carNumber) {
         this.id = id;
-        this.value = value;
-        timestamp = System.currentTimeMillis();
+        this.carNumber = carNumber;
+        timestamp = Instant.now().getEpochSecond();
     }
 
     @Override
     public String toString() {
         return "Sensor{" +
                 "id=" + id +
-                ", value='" + value + '\'' +
-                ", timestamp=" + LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())  +
+                ", car number='" + carNumber + '\'' +
+                ", timestamp=" + LocalDateTime.ofInstant(Instant.ofEpochSecond(timestamp), ZoneId.systemDefault())  +
                 '}';
     }
 }

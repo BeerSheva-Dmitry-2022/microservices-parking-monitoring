@@ -26,9 +26,9 @@ public class SourceService {
 
     private Sensor getSensorData() {
         int id = 1;
-        String value = getRandomNumber(1, 100) > 90 ? carNumbers[getRandomNumber(0, 9)] : lastCarNumber;
-        lastCarNumber = value;
-        Sensor sensor = new Sensor(id, value);
+        String carNumber = getRandomNumber(1, 100) > 90 ? carNumbers[getRandomNumber(0, 9)] : lastCarNumber;
+        lastCarNumber = carNumber;
+        Sensor sensor = new Sensor(id, carNumber);
         log.debug("send data {}", sensor);
         return sensor;
 
