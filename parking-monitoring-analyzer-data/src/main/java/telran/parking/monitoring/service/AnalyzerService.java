@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.function.Consumer;
 
 
@@ -28,7 +29,7 @@ public class AnalyzerService {
     private int intervalCheckFine;
     @Value("${app.parking.message.welcome:Welcome to the parking lot. Don't forget to pay for parking}")
     private String msg_welcome;
-    @Value("${app.parking.message.welcome:Thanks for parking.}")
+    @Value("${app.parking.message.bye:Thanks for parking.}")
     private String msg_bye;
 
 
@@ -63,7 +64,7 @@ public class AnalyzerService {
 
         checkPayment(sensorEntity);
 
-        sensorEntity.setTimestampCurrent(Instant.now().getEpochSecond());
+        sensorEntity.setTimestampCurrent(sensor.getTimestamp());
         sensorRepository.save(sensorEntity);
 
 
@@ -72,6 +73,7 @@ public class AnalyzerService {
     private SensorEntity getNewSensorEntity(Sensor sensor, SensorEntity sensorEntity) {
         if (sensorEntity.getCarNumber() != null && !sensorEntity.getCarNumber().equals("")) {
             //Если прошлая сессия была у водителя, регистрируем его в бд
+            sensorEntity.setTimestampEnd(sensor.getTimestamp());
             registrationVisit(sensorEntity);
             //Отправляем прощание старому водителю
             notifyDriver(String.format("%s Time parking: %d", msg_bye,
@@ -92,14 +94,15 @@ public class AnalyzerService {
     private void registrationVisit(SensorEntity sensorEntity) {
         VisitDto visitDto = VisitDto.builder().idSensor(sensorEntity.getId())
                 .startParking(sensorEntity.getTimestampStart())
-                .endParking(Instant.now().getEpochSecond())
+                .endParking(sensorEntity.getTimestampEnd())
                 .carNumber(sensorEntity.getCarNumber())
                 .fine(sensorEntity.isFine()).build();
         streamBridge.send("registration-visit-out-0", visitDto);
     }
 
     private void checkPayment(SensorEntity sensorEntity) {
-        if (!sensorEntity.isFine() && Instant.ofEpochSecond(sensorEntity.getTimestampCurrent()).getEpochSecond() >= periodNotify + sensorEntity.getTimeCheckFine()) {
+        if (!sensorEntity.isFine() && ChronoUnit.SECONDS.between(Instant.ofEpochSecond(sensorEntity.getTimestampStart()),
+                Instant.ofEpochSecond(sensorEntity.getTimestampCurrent())) >= periodNotify + sensorEntity.getTimeCheckFine()) {
             log.debug("send to check fine topic {}", sensorEntity);
             if (!checkFineService.checkFine(sensorEntity.getCarNumber())) {
                 log.debug("fine = true");
@@ -116,7 +119,7 @@ public class AnalyzerService {
 
     private long getPeriodDateTime(SensorEntity sensorEntity) {
         long start = sensorEntity.getTimestampStart();
-        long end = Instant.now().getEpochSecond();
+        long end = sensorEntity.getTimestampEnd();
         return end - start;
     }
 

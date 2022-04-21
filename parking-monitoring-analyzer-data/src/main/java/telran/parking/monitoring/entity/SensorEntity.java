@@ -20,6 +20,7 @@ public class SensorEntity {
     String carNumber;
     long timestampStart;
     long timestampCurrent;
+    long timestampEnd;
     int timeCheckFine;
     boolean isFine;
 

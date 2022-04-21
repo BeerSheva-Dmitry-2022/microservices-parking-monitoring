@@ -21,7 +21,7 @@ public class ProviderServiceImpl implements ProviderService{
     }
 
     @Override
-    public VisitDto addVisit(VisitDto visitDto) {
+    public VisitDto getVisit(VisitDto visitDto) {
         Sensor sensor = sensorRepo.findById(visitDto.getIdSensor()).orElse(null);
         if(sensor == null){
             throw new IllegalArgumentException(String
