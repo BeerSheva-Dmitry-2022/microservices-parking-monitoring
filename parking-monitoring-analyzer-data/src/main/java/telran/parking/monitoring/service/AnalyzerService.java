@@ -23,7 +23,9 @@ import java.util.function.Consumer;
 public class AnalyzerService {
 
     @Value("${app.parking.period.notify:5}")
-    private long periodNotify;
+    private int periodNotify;
+    @Value("${app.parking.interval.check.fine:10}")
+    private int intervalCheckFine;
     @Value("${app.parking.message.welcome:Welcome to the parking lot. Don't forget to pay for parking}")
     private String msg_welcome;
     @Value("${app.parking.message.welcome:Thanks for parking.}")
@@ -32,16 +34,17 @@ public class AnalyzerService {
 
     StreamBridge streamBridge;
     SensorRepository sensorRepository;
+    CheckFineService checkFineService;
 
 
-
-    public AnalyzerService(StreamBridge streamBridge, SensorRepository sensorRepository) {
+    public AnalyzerService(StreamBridge streamBridge, SensorRepository sensorRepository, CheckFineService checkFineService) {
         this.streamBridge = streamBridge;
         this.sensorRepository = sensorRepository;
+        this.checkFineService = checkFineService;
     }
 
     @Bean
-    Consumer<Sensor> parkingConsumer(){
+    Consumer<Sensor> parkingConsumer() {
         return this::dataProcessing;
     }
 
@@ -50,43 +53,64 @@ public class AnalyzerService {
         log.debug("receive sensor {}", sensor);
         SensorEntity sensorEntity = sensorRepository.findById(sensor.getId()).orElse(null);
 
-        if(sensorEntity==null){
+        if (sensorEntity == null) {
             sensorEntity = new SensorEntity(sensor.getId());
         }
 
-        if(isNewParking(sensor, sensorEntity)){
-            if(sensorEntity.getCarNumber()!=null && !sensorEntity.getCarNumber().equals("")){
-                notifyDriver(String.format("%s Time parking: %d", msg_bye,
-                        getPeriodDateTime(sensorEntity)), sensorEntity.getId(), sensorEntity.getCarNumber());
-            }
-            sensorEntity = SensorEntity.getSensorEntity(sensor);
-
-            if(!sensor.getCarNumber().equals("")){
-                VisitDto visitDto = VisitDto.getVisit(sensorEntity.getId(), sensorEntity.getCarNumber(), sensorEntity.getTimestampStart());
-                streamBridge.send("registration-visit-out-0", visitDto);
-                notifyDriver(String.format("%s within %d sec Time current: %s", msg_welcome, periodNotify,
-                        getDateTime(sensorEntity)), sensor.getId(), sensor.getCarNumber());
-            }
+        if (isNewParking(sensor, sensorEntity)) {
+            sensorEntity = getNewSensorEntity(sensor, sensorEntity);
         }
+
         checkPayment(sensorEntity);
 
         sensorEntity.setTimestampCurrent(Instant.now().getEpochSecond());
         sensorRepository.save(sensorEntity);
 
 
+    }
 
+    private SensorEntity getNewSensorEntity(Sensor sensor, SensorEntity sensorEntity) {
+        if (sensorEntity.getCarNumber() != null && !sensorEntity.getCarNumber().equals("")) {
+            //Если прошлая сессия была у водителя, регистрируем его в бд
+            registrationVisit(sensorEntity);
+            //Отправляем прощание старому водителю
+            notifyDriver(String.format("%s Time parking: %d", msg_bye,
+                    getPeriodDateTime(sensorEntity)), sensorEntity.getId(), sensorEntity.getCarNumber());
+        }
+        //Создаем новую сущность
+        sensorEntity = SensorEntity.getSensorEntity(sensor);
+
+
+        if (!sensor.getCarNumber().equals("")) {
+            //Если парковку заняла новая машина, приветствуем водителя
+            notifyDriver(String.format("%s within %d sec Time current: %s", msg_welcome, periodNotify,
+                    getDateTime(sensorEntity)), sensor.getId(), sensor.getCarNumber());
+        }
+        return sensorEntity;
+    }
+
+    private void registrationVisit(SensorEntity sensorEntity) {
+        VisitDto visitDto = VisitDto.builder().idSensor(sensorEntity.getId())
+                .startParking(sensorEntity.getTimestampStart())
+                .endParking(Instant.now().getEpochSecond())
+                .carNumber(sensorEntity.getCarNumber())
+                .fine(sensorEntity.isFine()).build();
+        streamBridge.send("registration-visit-out-0", visitDto);
     }
 
     private void checkPayment(SensorEntity sensorEntity) {
-        if(!sensorEntity.isCheckFine() && Instant.ofEpochSecond(sensorEntity.getTimestampCurrent()).getEpochSecond() >= periodNotify){
-            //TODO
-            sensorEntity.setCheckFine(true);
+        if (!sensorEntity.isFine() && Instant.ofEpochSecond(sensorEntity.getTimestampCurrent()).getEpochSecond() >= periodNotify + sensorEntity.getTimeCheckFine()) {
             log.debug("send to check fine topic {}", sensorEntity);
-            VisitDto details = new VisitDto();
-            details.setIdSensor(sensorEntity.getId());
-            details.setCarNumber(sensorEntity.getCarNumber());
-            details.setStartParking(sensorEntity.getTimestampStart());
-            streamBridge.send("check-fine-out-0", details);
+            if (!checkFineService.checkFine(sensorEntity.getCarNumber())) {
+                log.debug("fine = true");
+                sensorEntity.setFine(true);
+                //TODO send to topic fine
+            } else {
+                log.debug("fine = false");
+                sensorEntity.setFine(false);
+                sensorEntity.setTimeCheckFine(intervalCheckFine + sensorEntity.getTimeCheckFine());
+            }
+
         }
     }
 

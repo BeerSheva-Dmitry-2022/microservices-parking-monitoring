@@ -38,9 +38,16 @@ public class ProviderServiceImpl implements ProviderService{
                 .driver(driver)
                 .sensor(sensor)
                 .startParking(LocalDateTime.ofInstant(Instant.ofEpochSecond(visitDto.getStartParking()), ZoneId.systemDefault()))
+                .endParking(LocalDateTime.ofInstant(Instant.ofEpochSecond(visitDto.getEndParking()), ZoneId.systemDefault()))
+                .fine(visitDto.isFine())
                 .build();
         Visit res = visitRepo.save(visit);
         visitDto.setId(res.getId());
         return visitDto;
+    }
+
+    @Override
+    public VisitDto getVisit(int id) {
+        return null;
     }
 }

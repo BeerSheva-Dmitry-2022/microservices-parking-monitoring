@@ -20,7 +20,8 @@ public class SensorEntity {
     String carNumber;
     long timestampStart;
     long timestampCurrent;
-    boolean isCheckFine;
+    int timeCheckFine;
+    boolean isFine;
 
 
     public SensorEntity() {
@@ -36,7 +37,7 @@ public class SensorEntity {
         sensorEntity.carNumber = sensor.getCarNumber();
         sensorEntity.timestampStart = sensor.getTimestamp();
         sensorEntity.timestampCurrent = sensorEntity.timestampStart;
-        sensorEntity.isCheckFine = false;
+        sensorEntity.isFine = false;
         return sensorEntity;
     }
 

@@ -28,7 +28,7 @@ public class Visit {
     LocalDateTime startParking;
     @Column(name = "end_parking")
     LocalDateTime endParking;
-    @Column(name = "paid_time")
-    int paidTime;
+    @Column(name = "fine")
+    boolean fine;
 
 }
