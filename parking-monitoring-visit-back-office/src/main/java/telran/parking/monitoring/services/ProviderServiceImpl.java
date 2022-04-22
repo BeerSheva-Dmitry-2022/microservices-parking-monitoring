@@ -1,11 +1,15 @@
 package telran.parking.monitoring.services;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Service;
 import telran.parking.monitoring.dto.VisitDto;
 import telran.parking.monitoring.entities.*;
 import telran.parking.monitoring.repository.*;
 
 import java.time.*;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ProviderServiceImpl implements ProviderService{
@@ -21,29 +25,23 @@ public class ProviderServiceImpl implements ProviderService{
     }
 
     @Override
-    public VisitDto getVisit(VisitDto visitDto) {
-        Sensor sensor = sensorRepo.findById(visitDto.getIdSensor()).orElse(null);
-        if(sensor == null){
-            throw new IllegalArgumentException(String
-                    .format("sensor with id %d not found",  visitDto.getIdSensor()));
-        };
-
-        Driver driver = driverRepo.findById(visitDto.getCarNumber()).orElse(null);
-        if(driver == null){
-            throw new IllegalArgumentException(String
-                    .format("driver with id %s not found",  visitDto.getCarNumber()));
-        };
-
-        Visit visit = Visit.builder()
-                .driver(driver)
-                .sensor(sensor)
-                .startParking(LocalDateTime.ofInstant(Instant.ofEpochSecond(visitDto.getStartParking()), ZoneId.systemDefault()))
-                .endParking(LocalDateTime.ofInstant(Instant.ofEpochSecond(visitDto.getEndParking()), ZoneId.systemDefault()))
-                .fine(visitDto.isFine())
-                .build();
-        Visit res = visitRepo.save(visit);
-        visitDto.setId(res.getId());
-        return visitDto;
+    public List<VisitDto> getVisits(LocalDateTime from, LocalDateTime to) {
+       List<Visit> res =  visitRepo.getVisits(from, to);
+       return  res.stream().map(p -> VisitDto.builder()
+                .id(p.getId())
+                .carNumber(p.getDriver().getCarNumber())
+                .idSensor(p.getSensor().getId())
+                .startParking(p.getStartParking())
+                .endParking(p.getEndParking())
+                .fine(p.isFine())
+                .build()).toList();
     }
 
+    @Override
+    public Map<LocalDate, Long>  getStatisticVisitByPeriod(LocalDateTime from, LocalDateTime to) {
+        List<Visit> response =  visitRepo.getVisits(from, to);
+        Map<LocalDate, Long> res =  response.stream().map(p->p.getStartParking().toLocalDate())
+                .collect(Collectors.groupingBy(p -> p, Collectors.counting()));
+        return res;
+    }
 }

@@ -37,8 +37,8 @@ public class ProviderServiceImpl implements ProviderService{
         Visit visit = Visit.builder()
                 .driver(driver)
                 .sensor(sensor)
-                .startParking(LocalDateTime.ofInstant(Instant.ofEpochSecond(visitDto.getStartParking()), ZoneId.systemDefault()))
-                .endParking(LocalDateTime.ofInstant(Instant.ofEpochSecond(visitDto.getEndParking()), ZoneId.systemDefault()))
+                .startParking(visitDto.getStartParking())
+                .endParking(visitDto.getEndParking())
                 .fine(visitDto.isFine())
                 .build();
         Visit res = visitRepo.save(visit);

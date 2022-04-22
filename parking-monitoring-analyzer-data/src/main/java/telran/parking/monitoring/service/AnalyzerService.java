@@ -93,8 +93,8 @@ public class AnalyzerService {
 
     private void registrationVisit(SensorEntity sensorEntity) {
         VisitDto visitDto = VisitDto.builder().idSensor(sensorEntity.getId())
-                .startParking(sensorEntity.getTimestampStart())
-                .endParking(sensorEntity.getTimestampEnd())
+                .startParking(LocalDateTime.ofInstant(Instant.ofEpochSecond(sensorEntity.getTimestampStart()), ZoneId.systemDefault()))
+                .endParking(LocalDateTime.ofInstant(Instant.ofEpochSecond(sensorEntity.getTimestampEnd()), ZoneId.systemDefault()))
                 .carNumber(sensorEntity.getCarNumber())
                 .fine(sensorEntity.isFine()).build();
         streamBridge.send("registration-visit-out-0", visitDto);
